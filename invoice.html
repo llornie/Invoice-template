@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice</title>
+  <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <style>
+    @page { size: letter portrait; margin: 0; }
+    body { margin:0; padding:0.8in; font-family:Arial,sans-serif; font-size:11pt; line-height:1.5; background:#fff; color:#000; }
+    .inv { max-width:7.5in; margin:0 auto; position:relative; }
+    #logo { position:absolute; top:0.1in; left:0; width:1.4in; height:auto; }
+    .header { padding-left:1.7in; margin-bottom:1in; }
+    .from { font-size:13pt; margin-bottom:0.8in; }
+    h1 { font-size:28pt; font-weight:normal; margin:0 0 0.4in; }
+    .to, .details { width:48%; display:inline-block; vertical-align:top; }
+    .details { text-align:right; }
+    table { width:100%; border-collapse:collapse; margin:1in 0 1.5in; }
+    th, td { padding:0.4rem 0.6rem; border-bottom:1px solid #ddd; }
+    th { background:#f8f8f8; text-transform:uppercase; font-size:10pt; font-weight:normal; }
+    .right { text-align:right; }
+    .total { font-size:16pt; font-weight:bold; text-align:right; padding-top:0.8in; border-top:3px double #000; }
+    .note { margin-top:1.5in; font-size:10pt; color:#555; }
+  </style>
+</head>
+<body>
+<div class="inv">
+  <!-- Default = your church logo, but can be overridden with &logo=URL -->
+  <img id="logo" src="logo_imf.png" alt="Business Logo">
+
+  <div class="header">
+    <div class="from"><strong>IMF Church</strong><br>Box 973<br>Arborg MB R0C 0A0<br>Canada</div>
+    <h1>Invoice</h1>
+  </div>
+
+  <div class="to" id="bill-to"></div>
+  <div class="details">
+    Invoice # <span id="num">001</span><br>
+    Date: <span id="date"></span><br>
+    Due: <span id="due">Upon Receipt</span>
+  </div>
+
+  <table id="items">
+    <thead><tr><th>Description</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Amount</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="total">Total: CAD <span id="total">$0.00</span></div>
+  <div class="note" id="note">Thank you for your support.<br>Payment by cheque or e-transfer to payments@imfchurch.ca</div>
+</div>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  const get = (k,d="")=>q.get(k)??d;
+
+  // Override logo if &logo=... is in the URL
+  const urlLogo = get("logo");
+  if (urlLogo) document.getElementById("logo").src = urlLogo.trim();
+
+  document.getElementById("num").textContent = get("num","001");
+  document.getElementById("date").textContent = get("date",new Date().toLocaleDateString('en-CA'));
+  document.getElementById("due").textContent = get("due","Upon Receipt");
+
+  document.getElementById("bill-to").innerHTML = 
+    [get("name"),get("company"),get("address"),get("city")+" "+get("province")+" "+get("postal")]
+    .filter(Boolean).join("<br>") || "Bill To:";
+
+  const tbody = document.querySelector("#items tbody");
+  let total = 0, i = 1;
+  while (q.has(`item${i}`)) {
+    const desc = get(`item${i}`);
+    const qty = parseFloat(get(`qty${i}`)) || 1;
+    const rate = parseFloat(get(`rate${i}`)) || 0;
+    const amt = qty * rate;
+    if (desc) {
+      total += amt;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${desc}</td><td class="right">${qty}</td><td class="right">$${rate.toFixed(2)}</td><td class="right">$${amt.toFixed(2)}</td>`;
+      tbody.appendChild(tr);
+    }
+    i++;
+  }
+  document.getElementById("total").textContent = "$" + total.toFixed(2);
+
+  const note = get("note");
+  if (note) document.getElementById("note").innerHTML = note.replace(/\n/g,"<br>");
+
+  if (get("print","1") !== "0") setTimeout(()=>window.print(),400);
+</script>
+</body>
+</html>
